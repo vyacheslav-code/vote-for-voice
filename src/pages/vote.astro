@@ -1,0 +1,160 @@
+---
+import { supabase } from '../lib/supabase';
+import Layout from '../layouts/Layout.astro';
+
+// Fetch 2 random phrases
+const { data: phrases, error } = await supabase
+  .from('phrases')
+  .select('id, text')
+  .limit(100); // Get a subset for better randomization
+
+if (error) {
+  console.error('Error fetching phrases:', error);
+}
+
+// If we have fewer than 2 phrases, show an error
+if (!phrases || phrases.length < 2) {
+  return Astro.redirect('/error?message=Not enough phrases in database');
+}
+
+// Randomly select 2 different phrases
+const shuffled = [...phrases].sort(() => Math.random() - 0.5);
+const phrase1 = shuffled[0];
+const phrase2 = shuffled[1];
+---
+
+<Layout title="Vote for Voice">
+  <main>
+    <h1>Which phrase is better?</h1>
+    <p class="subtitle">Choose the one you like more</p>
+
+    <form method="POST" action="/api/vote">
+      <input type="hidden" name="loser_id" value={phrase2.id} id="loser_id" />
+
+      <div class="buttons">
+        <button
+          type="submit"
+          name="winner_id"
+          value={phrase1.id}
+          class="phrase-button"
+        >
+          <span class="phrase-text">{phrase1.text}</span>
+        </button>
+
+        <div class="vs">VS</div>
+
+        <button
+          type="submit"
+          name="winner_id"
+          value={phrase2.id}
+          class="phrase-button"
+          onclick="document.getElementById('loser_id').value = '{phrase1.id}'"
+        >
+          <span class="phrase-text">{phrase2.text}</span>
+        </button>
+      </div>
+    </form>
+
+    <nav class="bottom-nav">
+      <a href="/results">View Results</a>
+    </nav>
+  </main>
+</Layout>
+
+<style>
+  main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: #333;
+  }
+
+  .subtitle {
+    color: #666;
+    margin-bottom: 3rem;
+    font-size: 1.1rem;
+  }
+
+  .buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .phrase-button {
+    width: 100%;
+    max-width: 500px;
+    padding: 2rem;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .phrase-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .phrase-button:active {
+    transform: translateY(-2px);
+  }
+
+  .phrase-text {
+    display: block;
+    line-height: 1.5;
+  }
+
+  .vs {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #999;
+    margin: 1rem 0;
+  }
+
+  .bottom-nav {
+    margin-top: 3rem;
+  }
+
+  .bottom-nav a {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .bottom-nav a:hover {
+    background: #667eea;
+    color: white;
+  }
+
+  @media (max-width: 600px) {
+    h1 {
+      font-size: 2rem;
+    }
+
+    .phrase-button {
+      padding: 1.5rem;
+      font-size: 1.2rem;
+    }
+  }
+</style>
