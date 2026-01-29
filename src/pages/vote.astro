@@ -2,11 +2,12 @@
 import { supabase } from '../lib/supabase';
 import Layout from '../layouts/Layout.astro';
 
-// Fetch 2 random phrases
+// Fetch phrases with fewer votes first, so all phrases get fair exposure
 const { data: phrases, error } = await supabase
   .from('phrases')
   .select('id, text')
-  .limit(100); // Get a subset for better randomization
+  .order('votes', { ascending: true })
+  .limit(50); // Get the 50 least-voted phrases, then randomly pick 2
 
 if (error) {
   console.error('Error fetching phrases:', error);
